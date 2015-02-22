@@ -112,7 +112,7 @@ void PPAPICommon_HandleCommandMessage(PP_Instance instance, struct PP_Var var_me
 		return;
 	}
 
-	
+
 	struct PP_Var var_result;
 	const char* error;
 	int result = (*function)(var_params, &var_result, &error);
@@ -125,7 +125,7 @@ void PPAPICommon_HandleCommandMessage(PP_Instance instance, struct PP_Var var_me
 		}
 		return;
 	}
-	
+
 	if (PostIdMessage(var_id, var_result)) {
 		PostStringMessage("error: unable to post id message");
 	}
@@ -548,7 +548,7 @@ int GetParamDoubleArray(struct PP_Var params, uint32_t index, uint32_t *out_int,
 void CreateResponse(struct PP_Var* response_var,
                            const char* cmd,
                            const char** out_error) {
-  PP_Bool result;
+  /*PP_Bool result;
 
   struct PP_Var dict_var = g_ppb_var_dictionary->Create();
   struct PP_Var cmd_key = CStrToVar("cmd");
@@ -578,7 +578,8 @@ void CreateResponse(struct PP_Var* response_var,
     return;
   }
 
-  *response_var = dict_var;
+  *response_var = dict_var;*/
+  *response_var = g_ppb_var_array->Create();
 }
 
 /**
@@ -590,7 +591,8 @@ void CreateResponse(struct PP_Var* response_var,
 void AppendResponseVar(struct PP_Var* response_var,
                               struct PP_Var value,
                               const char** out_error) {
-  struct PP_Var args_value = GetDictVar(*response_var, "args");
+  //struct PP_Var args_value = GetDictVar(*response_var, "args");
+  struct PP_Var args_value = *response_var;
   uint32_t args_length = g_ppb_var_array->GetLength(args_value);
   PP_Bool result = g_ppb_var_array->Set(args_value, args_length, value);
   if (!result) {
