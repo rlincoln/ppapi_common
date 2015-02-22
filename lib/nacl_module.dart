@@ -29,7 +29,8 @@ abstract class NaClModule {
   String mimetype = 'application/x-pnacl';
   num width = 0, height = 0;
   
-  Element _wrapper;
+  Node _wrapper;
+  var component;
   JsObject _jsModule = null;
   
   Completer _loadCompleter;
@@ -48,6 +49,8 @@ abstract class NaClModule {
     _wrapper.addEventListener('message', onMessage, true);  
     _wrapper.addEventListener('error', _onError, true);
     _wrapper.addEventListener('crash', _onCrash, true);
+
+    component = _wrapper;
   }
   
   Future loadModule() {
@@ -60,8 +63,9 @@ abstract class NaClModule {
   
   void onLoad(Event event) {
     _status = ModuleStatus.RUNNING;
-    var jsDoc = new JsObject.fromBrowserObject(context["document"]);
-    _jsModule = new JsObject.fromBrowserObject(jsDoc.callMethod("getElementById", [id]));
+//    var jsDoc = new JsObject.fromBrowserObject(context["document"]);
+//    _jsModule = new JsObject.fromBrowserObject(jsDoc.callMethod("getElementById", [id]));
+    _jsModule = new JsObject.fromBrowserObject(component.querySelector('#$id'));
     _loaded = true;
     if (_loadCompleter != null) {
       _loadCompleter.complete(_loaded);
@@ -132,11 +136,11 @@ abstract class AsyncNaClModule extends NaClModule {
   final Random _random = new Random();
   final Map<String, Completer> _messageCompleters = {};
 
-  AsyncNaClModule(wrapper, String name, String path) :
+  AsyncNaClModule(wrapper, String name, [String path = 'pnacl/Release']) :
     super(wrapper, name, path);
   
   dynamic get _nextId => _random.nextInt(1 << 31);
-  
+
   Future postMessage(message) {
     final id = _nextId;
     var completer = new Completer();
@@ -146,18 +150,28 @@ abstract class AsyncNaClModule extends NaClModule {
       'id': id,
       'payload': message
     };
-    super.postMessage(fullMessage);
+
+    if (!loaded) {
+      loadModule().then((_) {
+        super.postMessage(fullMessage);
+      }, onError: (error) {
+        completer.completeError(error);
+      });
+    } else {
+      super.postMessage(fullMessage);
+    }
     
     return completer.future;
   }
   
   void onMessage(event) {
     final message = event.data;
+    print('Raw: $event $message');
     if (message is! Map) {
-      throw new ArgumentError.value(message);
+      throw new ArgumentError.value(message, 'message', 'expected a map');
     }
     if (!message.containsKey('id') || !message.containsKey('payload')) {
-      throw new ArgumentError.value(message);
+      throw new ArgumentError.value(message, 'message', 'no id or payload');
     } 
     var id = message['id'];
     var payload = message['payload'];
