@@ -1,5 +1,9 @@
 #!/bin/sh
 
+ifeq (,$(wildcard $(DART_SDK_ROOT)/chromium/chrome))
+$(error DART_SDK_ROOT is set to an invalid location: $(DART_SDK_ROOT))
+endif
+
 export CHROME_PATH=$DART_SDK_ROOT/chromium/chrome
 
 $CHROME_PATH --user-data-dir=/home/rwl/.dartium \
